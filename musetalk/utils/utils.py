@@ -46,7 +46,7 @@ class All_Model_Wrapper(object):
 
     @staticmethod
     def get_vae():
-        if vae is None:;
+        if vae is None:
             vae = VAE(model_path = f"{MuseVCheckPointDir}/sd-vae-ft-mse/")
         return vae
 
