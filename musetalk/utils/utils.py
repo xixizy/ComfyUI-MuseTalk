@@ -23,13 +23,44 @@ from musetalk.whisper.audio2feature import Audio2Feature
 from musetalk.models.vae import VAE
 from musetalk.models.unet import UNet,PositionalEncoding
 
-def load_all_model():
-    audio_processor = Audio2Feature(model_path=f"{MuseVCheckPointDir}/whisper/tiny.pt")
-    vae = VAE(model_path = f"{MuseVCheckPointDir}/sd-vae-ft-mse/")
-    unet = UNet(unet_config=f"{MuseVCheckPointDir}/musetalk/musetalk.json",
-                model_path =f"{MuseVCheckPointDir}/musetalk/pytorch_model.bin")
-    pe = PositionalEncoding(d_model=384)
-    return audio_processor,vae,unet,pe
+# def load_all_model():
+#     audio_processor = Audio2Feature(model_path=f"{MuseVCheckPointDir}/whisper/tiny.pt")
+#     vae = VAE(model_path = f"{MuseVCheckPointDir}/sd-vae-ft-mse/")
+#     unet = UNet(unet_config=f"{MuseVCheckPointDir}/musetalk/musetalk.json",
+#                 model_path =f"{MuseVCheckPointDir}/musetalk/pytorch_model.bin")
+#     pe = PositionalEncoding(d_model=384)
+#     return audio_processor,vae,unet,pe
+
+class All_Model_Wrapper(object):
+
+    audio_processor = None
+    vae = None
+    unet = None
+    pe = None
+
+    @staticmethod
+    def get_audio_processor():
+        if audio_processor is None:
+            audio_processor = Audio2Feature(model_path=f"{MuseVCheckPointDir}/whisper/tiny.pt")
+        return audio_processor
+
+    @staticmethod
+    def get_vae():
+        if vae is None:;
+            vae = VAE(model_path = f"{MuseVCheckPointDir}/sd-vae-ft-mse/")
+        return vae
+
+    @staticmethod
+    def get_unet():
+        if unet is None:
+            unet = UNet(unet_config=f"{MuseVCheckPointDir}/musetalk/musetalk.json", model_path =f"{MuseVCheckPointDir}/musetalk/pytorch_model.bin")
+        return unet
+
+    @staticmethod
+    def get_pe():
+        if pe is None:
+            pe = PositionalEncoding(d_model=384)
+        return pe
 
 def get_file_type(video_path):
     _, ext = os.path.splitext(video_path)
