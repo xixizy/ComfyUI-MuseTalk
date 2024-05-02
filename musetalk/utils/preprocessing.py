@@ -25,7 +25,18 @@ MuseVCheckPointDir = os.path.join(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 config_file = f'{comfy_path}/custom_nodes/ComfyUI-MuseTalk/musetalk/utils/dwpose/rtmpose-l_8xb32-270e_coco-ubody-wholebody-384x288.py'
 checkpoint_file = f'{MuseVCheckPointDir}/dwpose/dw-ll_ucoco_384.pth'
-model = init_model(config_file, checkpoint_file, device=device)
+# model = init_model(config_file, checkpoint_file, device=device)
+
+class DW_Wrapper(object):
+
+    _model = None
+
+    @staticmethod
+    def get_model():
+        if _model is None:
+            _model = init_model(config_file, checkpoint_file, device=device)
+
+        return _model
 
 # initialize the face detection model
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -64,7 +75,7 @@ def get_landmark_and_bbox_frames(frames,upperbondrange =0):
     average_range_plus = []
     pbar = comfy.utils.ProgressBar(len(batches))
     for fb in tqdm(batches):
-        results = inference_topdown(model, np.asarray(fb)[0])
+        results = inference_topdown(DW_Wrapper.get_model(), np.asarray(fb)[0])
         results = merge_data_samples(results)
         keypoints = results.pred_instances.keypoints
         face_land_mark= keypoints[0][23:91]
@@ -120,7 +131,7 @@ def get_landmark_and_bbox(img_list,upperbondrange =0):
     average_range_plus = []
     pbar = comfy.utils.ProgressBar(len(batches))
     for fb in tqdm(batches):
-        results = inference_topdown(model, np.asarray(fb)[0])
+        results = inference_topdown(DW_Wrapper.get_model(), np.asarray(fb)[0])
         results = merge_data_samples(results)
         keypoints = results.pred_instances.keypoints
         face_land_mark= keypoints[0][23:91]
