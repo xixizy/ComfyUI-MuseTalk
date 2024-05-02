@@ -25,13 +25,13 @@ sys.path.insert(0,f'{comfy_path}/custom_nodes/ComfyUI-MuseTalk')
 from musetalk.utils.utils import get_file_type,get_video_fps,datagen
 from musetalk.utils.preprocessing import get_landmark_and_bbox,read_imgs,coord_placeholder
 from musetalk.utils.blending import get_image
-from musetalk.utils.utils import load_all_model
+from musetalk.utils.utils import All_Model_Wrapper # load_all_model
 
 from pydub import AudioSegment
 import time
 
 # load model weights
-audio_processor,vae,unet,pe  = load_all_model()
+# audio_processor,vae,unet,pe  = load_all_model()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 timesteps = torch.tensor([0], device=device)
 
@@ -113,8 +113,8 @@ class MuseTalkRun:
             fps = args.fps
         #print(input_img_list)
         ############################################## extract audio feature ##############################################
-        whisper_feature = audio_processor.audio2feat(audio_path)
-        whisper_chunks = audio_processor.feature2chunks(feature_array=whisper_feature,fps=fps)
+        whisper_feature = All_Model_Wrapper.get_audio_processor().audio2feat(audio_path)
+        whisper_chunks = All_Model_Wrapper.get_audio_processor().feature2chunks(feature_array=whisper_feature,fps=fps)
         ############################################## preprocess input image  ##############################################
         if os.path.exists(crop_coord_save_path) and use_saved_coord:
             print("using extracted coordinates")
@@ -135,7 +135,7 @@ class MuseTalkRun:
             x1, y1, x2, y2 = bbox
             crop_frame = frame[y1:y2, x1:x2]
             crop_frame = cv2.resize(crop_frame,(256,256),interpolation = cv2.INTER_LANCZOS4)
-            latents = vae.get_latents_for_unet(crop_frame)
+            latents = All_Model_Wrapper.get_vae().get_latents_for_unet(crop_frame)
             input_latent_list.append(latents)
 
         # to smooth the first and the last frame
@@ -152,11 +152,11 @@ class MuseTalkRun:
         for i, (whisper_batch,latent_batch) in enumerate(tqdm(gen,total=int(np.ceil(float(video_num)/batch_size)))):
             
             tensor_list = [torch.FloatTensor(arr) for arr in whisper_batch]
-            audio_feature_batch = torch.stack(tensor_list).to(unet.device) # torch, B, 5*N,384
-            audio_feature_batch = pe(audio_feature_batch)
+            audio_feature_batch = torch.stack(tensor_list).to(All_Model_Wrapper.get_unet().device) # torch, B, 5*N,384
+            audio_feature_batch = All_Model_Wrapper.get_pe()(audio_feature_batch)
             
-            pred_latents = unet.model(latent_batch, timesteps, encoder_hidden_states=audio_feature_batch).sample
-            recon = vae.decode_latents(pred_latents)
+            pred_latents = All_Model_Wrapper.get_unet().model(latent_batch, timesteps, encoder_hidden_states=audio_feature_batch).sample
+            recon = All_Model_Wrapper.get_vae().decode_latents(pred_latents)
             for res_frame in recon:
                 res_frame_list.append(res_frame)
             pbar.update(1)
